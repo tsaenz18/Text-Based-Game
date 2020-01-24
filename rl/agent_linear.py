@@ -46,8 +46,13 @@ def epsilon_greedy(state_vector, theta, epsilon):
         (int, int): the indices describing the action/object to take
     """
     # TODO Your code here
-    action_index, object_index = None, None
+    action_index, object_index = index2tuple(NUM_ACTIONS)
+    if np.random.random() < epsilon:
+        action_index, object_index = np.random.choice(range(NUM_ACTIONS)), np.random.choice(range(NUM_OBJECTS))
+    else:
+        action_index, object_index = index2tuple(np.argmax(theta @ state_vector))
     return (action_index, object_index)
+
 # pragma: coderesponse end
 
 
@@ -69,7 +74,11 @@ def linear_q_learning(theta, current_state_vector, action_index, object_index,
         None
     """
     # TODO Your code here
-    theta = None # TODO Your update here
+    q_value = (theta @ current_state_vector)[tuple2index(action_index, object_index)]
+    max_q_value_next  = 0 if terminal else np.max(theta @ next_state_vector)
+    y = reward + (GAMMA * max_q_value_next)
+    delta_theta = (y - q_value) * current_state_vector
+    theta[tuple2index(action_index, object_index)] = theta[tuple2index(action_index, object_index)] + (ALPHA * np.transpose(delta_theta))
 # pragma: coderesponse end
 
 
@@ -85,7 +94,7 @@ def run_episode(for_training):
         None
     """
     epsilon = TRAINING_EP if for_training else TESTING_EP
-    epi_reward = None
+    epi_reward = 0
 
     # initialize for each episode
     # TODO Your code here
@@ -101,15 +110,21 @@ def run_episode(for_training):
         if for_training:
             # update Q-function.
             # TODO Your code here
+            tabular_q_learning(q_func, current_state_1, current_state_2, action_index,
+                       object_index, reward, next_state_1, next_state_2,
+                       terminal)
             pass
 
         if not for_training:
             # update reward
             # TODO Your code here
+            epi_reward = epi_reward + (GAMMA**t)*reward
             pass
 
         # prepare next step
         # TODO Your code here
+        t = t +1
+        current_room_desc, current_quest_desc = next_state_1, next_state_2
 
     if not for_training:
         return epi_reward
