@@ -35,8 +35,13 @@ def epsilon_greedy(state_1, state_2, q_func, epsilon):
         (int, int): the indices describing the action/object to take
     """
     # TODO Your code here
-    action_index, object_index = None, None
+    action_index, object_index = 0, 0
+    if np.random.random() < epsilon:
+        action_index, object_index = np.random.randint(0,4), np.random.randint(0,7) 
+    else:
+        action_index, object_index = np.unravel_index(q_func[state_1, state_2, :, :].argmax(), q_func[state_1, state_2].shape)
     return (action_index, object_index)
+
 
 
 # pragma: coderesponse end
@@ -61,9 +66,12 @@ def tabular_q_learning(q_func, current_state_1, current_state_2, action_index,
         None
     """
     # TODO Your code here
-    q_func[current_state_1, current_state_2, action_index,
-           object_index] = 0  # TODO Your update here
+    q_func_next = q_func[next_state_1,next_state_2,:,:]
+    max_q_func_next = np.max(q_func_next) * (1 - terminal)
+    q_func_current = q_func[current_state_1, current_state_2, action_index, object_index]
 
+    q_func[current_state_1, current_state_2, action_index, object_index] = (1-ALPHA) * q_func_current + ALPHA * (reward + GAMMA * max_q_func_next)
+    
     return None  # This function shouldn't return anything
 
 
@@ -89,23 +97,34 @@ def run_episode(for_training):
     # TODO Your code here
 
     (current_room_desc, current_quest_desc, terminal) = framework.newGame()
+    t = 0
 
     while not terminal:
         # Choose next action and execute
         # TODO Your code here
+        current_state_1 = dict_room_desc[current_room_desc]
+        current_state_2 = dict_quest_desc[current_quest_desc]
+        action_index, object_index = epsilon_greedy(current_state_1, current_state_2, q_func, TRAINING_EP)
+        next_state_1, next_state_2, reward, terminal = framework.step_game(current_room_desc, current_quest_desc, action_index, object_index)
 
         if for_training:
             # update Q-function.
             # TODO Your code here
+            tabular_q_learning(q_func, current_state_1, current_state_2, action_index,
+                       object_index, reward, next_state_1, next_state_2,
+                       terminal)
             pass
 
         if not for_training:
             # update reward
             # TODO Your code here
+            epi_reward = epi_reward + (GAMMA**t)*reward
             pass
 
         # prepare next step
         # TODO Your code here
+        t = t +1
+        current_room_desc, current_quest_desc = next_state_1, next_state_2
 
     if not for_training:
         return epi_reward
